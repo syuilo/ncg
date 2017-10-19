@@ -17,7 +17,7 @@ cmd
   .option('--tcp_nopush <tcp_nopush>', 'nginx tcp_nopush')
   .option('--tcp_nodelay <tcp_nodelay>', 'nginx tcp_nodelay')
   .option('--gzip <gzip>', 'nginx gzip')
-  .option('--include <include dir>', 'nginx include conf dir', /^[\/a-z 0-9]*.*$/i, '/etc/nginx/sites-enabled/*')
+  .option('--include <include dir>', 'nginx include conf dir', /^[\/a-z 0-9]*.*$/i, '/etc/nginx/sites-enabled/*.conf')
   
   .option('--vhost', 'vhost configure')
   .option('--vhconf_name <vhost conf name>', 'vhost conf name')
@@ -74,6 +74,10 @@ if(cmd.nginx) {
     config = replace(config, "gzip", '#');
   }
   
+  if(!isExistFile('built')) {
+    fs.mkdirSync('built');
+  }
+  
   fs.writeFileSync('built/nginx.conf', config);
 }
 
@@ -127,6 +131,10 @@ if(cmd.vhost) {
   }else{
     config = replace(config, "location", '');
   }
+  
+  if(!isExistFile('built')) {
+    fs.mkdirSync('built');
+  }
     
   if(cmd.vhconf_name) {
     fs.writeFileSync(`built/${cmd.vhconf_name}.conf`, config);
@@ -137,4 +145,13 @@ if(cmd.vhost) {
 
 function replace(temp, name, value) {
   return temp.replace(new RegExp(`{{${name}}}`, 'g'), value);
+}
+
+function isExistFile(file) {
+  try {
+    fs.statSync(file);
+    return true
+  } catch(err) {
+    if(err.code === 'ENOENT') return false
+  }
 }
