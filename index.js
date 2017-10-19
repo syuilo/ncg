@@ -20,6 +20,7 @@ cmd
   .option('--include <include dir>', 'nginx include conf dir', /^[\/a-z 0-9]*.*$/i, '/etc/nginx/sites-enabled/*')
   
   .option('--vhost', 'vhost configure')
+  .option('--vhconf_name <vhost conf name>', 'vhost conf name')
   .option('--SSL', 'SSL')
   .option('--servername <servername>', 'server_name', /^.*\.[a-z]+$/i, 'localhost')
   .option('--rootdir <dir>', 'rootDir', /^[\/a-z 0-9]*.*$/i, '/var/www/html')
@@ -73,7 +74,7 @@ if(cmd.nginx) {
     config = replace(config, "gzip", '#');
   }
   
-  console.log(config);
+  fs.writeFileSync('built/nginx.conf', config);
 }
 
 if(cmd.vhost) {
@@ -127,7 +128,11 @@ if(cmd.vhost) {
     config = replace(config, "location", '');
   }
     
-  console.log(config);
+  if(cmd.vhconf_name) {
+    fs.writeFileSync(`built/${cmd.vhconf_name}.conf`, config);
+  }else{
+    fs.writeFileSync('built/default.conf', config);
+  }
 }
 
 function replace(temp, name, value) {
