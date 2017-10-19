@@ -1,0 +1,17 @@
+{
+  "name": "ncg",
+  "version": "1.0.0",
+  "description": "E A S Y nginx conf and vhost conf generator.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nginx"
+  ],
+  "author": "@2vg",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.11.0"
+  }
+}
