@@ -1,7 +1,7 @@
-'use strict'
+'use strict';
 
-const cmd = require("commander");
-const fs = require("fs");
+const cmd = require('commander');
+const fs = require('fs');
 
 cmd
   .version('1.0.0')
@@ -18,7 +18,7 @@ cmd
   .option('--tcp_nodelay <tcp_nodelay>', 'nginx tcp_nodelay')
   .option('--gzip <gzip>', 'nginx gzip')
   .option('--include <include dir>', 'nginx include conf dir', /^[\/a-z 0-9]*.*$/i, '/etc/nginx/sites-enabled/*.conf')
-  
+
   .option('--vhost', 'vhost configure')
   .option('--vhconf_name <vhost conf name>', 'vhost conf name')
   .option('--SSL', 'SSL')
@@ -30,110 +30,120 @@ cmd
   .option('--certdir <dir>', 'certfileDir', /^[\/a-z 0-9]*.*$/i, false)
   .option('--certkeydir <dir>', 'certkeyDir', /^[\/a-z 0-9]*.*$/i, false)
   .parse(process.argv);
-  
-if(cmd.nginx && cmd.vhost || !cmd.nginx && !cmd.vhost) {
-  console.log("Error. choose only one option. --nginx or --vhost.");
+
+if (cmd.nginx && cmd.vhost || !cmd.nginx && !cmd.vhost) {
+  console.log('Error. choose only one option. --nginx or --vhost.');
   process.exit(1);
 }
 
-if(cmd.nginx) {
+if (cmd.nginx) {
   let config;
-  
+
   config = fs.readFileSync('confs/nginx.conf', 'utf-8');
-  
+
   let put = {
-    "user": cmd.user,
-    "worker_processes": cmd.wp,
-    "worker_connections": cmd.wc,
-    "charset": cmd.charset,
-    "error_log": cmd.el,
-    "access_log": cmd.al,
-    "user": cmd.user,
-    "keepalive_timeout": cmd.keeptime,
-    "include": cmd.include,
-    "sendfile": cmd.sendfile ? 'on' : 'off',
-    "tcp_nopush": cmd.tcp_nopush ? 'on' : 'off',
-    "tcp_nodelay": cmd.tcp_nodelay ? 'on' : 'off',
-    "gzip": cmd.gzip ? '' : '#',
+    'user': cmd.user,
+    'worker_processes': cmd.wp,
+    'worker_connections': cmd.wc,
+    'charset': cmd.charset,
+    'error_log': cmd.el,
+    'access_log': cmd.al,
+    'user': cmd.user,
+    'keepalive_timeout': cmd.keeptime,
+    'include': cmd.include,
+    'sendfile': cmd.sendfile ? 'on' : 'off',
+    'tcp_nopush': cmd.tcp_nopush ? 'on' : 'off',
+    'tcp_nodelay': cmd.tcp_nodelay ? 'on' : 'off',
+    'gzip': cmd.gzip ? '' : '#',
   };
-  
-  config = rep(config, put);
-  
-  if(!isExistFile('built')) {
+
+  config = replaceAll(config, put);
+
+  if (!isExistFile('built')) {
     fs.mkdirSync('built');
   }
-  
+
   fs.writeFileSync('built/nginx.conf', config);
 }
 
-if(cmd.vhost) {
+if (cmd.vhost) {
   let config, location = null;
-  
+
   config = fs.readFileSync('confs/temp.conf', 'utf-8');
-  const server_ssl = "server {\n" +
-                     "  listen 80 http2;\n" +
+  const server_ssl = 'server {\n' +
+                     '  listen 80 http2;\n' +
                      `  server_name ${cmd.servername};\n` +
-                     "  return 301 https://$host$request_uri;\n" +
-                     "}\n\n";
-  
+                     '  return 301 https://$host$request_uri;\n' +
+                     '}\n\n';
+
   let put = {
-    "server_name": cmd.servername,
-    "rootdir": cmd.rootdir,
-    "index": cmd.index,
-    "listen": cmd.SSL ? "443" : "80",
-    "certfile_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certdir : '',
-    "certkey_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',
-    "dhparam_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',
+    'server_name': cmd.servername,
+    'rootdir': cmd.rootdir,
+    'index': cmd.index,
+    'listen': cmd.SSL ? '443' : '80',
+    'certfile_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certdir : '',
+    'certkey_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',
+    'dhparam_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',
   };
-  
-  if(cmd.SSL) {
+
+  if (cmd.SSL) {
     config = server_ssl + config;
     const ss = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
-    config = rep(r(config, "ssl_settings", rep(ss, put)), put);
-  }else{
-    put["ssl_settings"] = '';
-    config = rep(config, put);
+    config = replaceAll(replace(config, 'ssl_settings', replaceAll(ss, put)), put);
+  } else {
+    put['ssl_settings'] = '';
+    config = replaceAll(config, put);
   }
-  
-  if(cmd.php !== false) {
+
+  if (cmd.php !== false) {
     const temp = fs.readFileSync('confs/php_location.conf', 'utf-8');
-    location = r(temp, "fastcgi_pass", cmd.php);
+    location = replace(temp, 'fastcgi_pass', cmd.php);
   }
-  
-  if(location != null) {
-    config = r(config, "location", location);
-  }else{
-    config = r(config, "location", '');
+
+  if (location != null) {
+    config = replace(config, 'location', location);
+  } else {
+    config = replace(config, 'location', '');
   }
-  
-  if(!isExistFile('built')) fs.mkdirSync('built');
-    
-  if(cmd.vhconf_name) {
+
+  if (!isExistFile('built')) fs.mkdirSync('built');
+
+  if (cmd.vhconf_name) {
     fs.writeFileSync(`built/${cmd.vhconf_name}.conf`, config);
-  }else{
+  } else {
     fs.writeFileSync('built/default.conf', config);
   }
 }
 
-function rep(str, obj) {
+function replaceAll(str, obj) {
   let result = str;
-  for(const v of str.match(/\{\{(.*)\}\}/g)) {
-    const test = v.match(/\{\{(.*)\}\}/)[1];
-    if(obj[test] == null) continue;
-    result = r(result, test, `${obj[test]}`);
-  }
-  return result
+
+  const values = str.match(/\{\{(.*)\}\}/g) || [];
+
+  values
+    .map(v => v.match(/\{\{(.*)\}\}/)[1])
+    .filter(v => obj[v] != null)
+    .forEach(v => {
+      result = replace(result, v, `${obj[v]}`);
+    });
+
+  return result;
 }
 
-function r(temp, name, value) {
-  return temp.replace(new RegExp(`{{${name}}}`, 'g'), value);
+function replace(template, name, value) {
+  return template.replace(new RegExp(`{{${name}}}`, 'g'), value);
 }
 
+/**
+ * Check whether file exists
+ * @param {*} file Name of file that you want to check
+ * @returns {boolean} Whether file exists
+ */
 function isExistFile(file) {
   try {
     fs.statSync(file);
-    return true
-  } catch(err) {
-    if(err.code === 'ENOENT') return false
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') return false;
   }
 }
