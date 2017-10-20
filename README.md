@@ -14,8 +14,3 @@ can use **only one** option
 
 ## Option List
 wip ...
-
-## Example
-see built folder.
-this conf is 
-`node . --nginx` result.

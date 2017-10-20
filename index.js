@@ -81,9 +81,9 @@ if(cmd.vhost) {
     "rootdir": cmd.rootdir,
     "index": cmd.index,
     "listen": cmd.SSL ? "443" : "80",
-    "certfile_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certdir : '',//ここ
-    "certkey_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',//ここ
-    "dhparam_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',//ここ
+    "certfile_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certdir : '',
+    "certkey_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',
+    "dhparam_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',
   };
   
   if(cmd.SSL) {
@@ -91,7 +91,8 @@ if(cmd.vhost) {
     const ss = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
     config = rep(r(config, "ssl_settings", rep(ss, put)), put);
   }else{
-    config = rep(r(config, "ssl_settings", ''), put);
+    put["ssl_settings"] = '';
+    config = rep(config, put);
   }
   
   if(cmd.php !== false) {
@@ -118,9 +119,8 @@ function rep(str, obj) {
   let result = str;
   for(const v of str.match(/\{\{(.*)\}\}/g)) {
     const test = v.match(/\{\{(.*)\}\}/)[1];
-    if(!obj[test]) continue;
-    result = r(result, test, obj[test]);
-    console.log(`${test}: ${obj[test]}`);
+    if(obj[test] == null) continue;
+    result = r(result, test, `${obj[test]}`);
   }
   return result
 }
