@@ -78,7 +78,7 @@ if (cmd.vhost) {
     '  return 301 https://$host$request_uri;\n' +
     '}\n\n';
 
-  let put = {
+  let overrides = {
     'server_name': cmd.servername,
     'rootdir': cmd.rootdir,
     'index': cmd.index,
@@ -91,10 +91,10 @@ if (cmd.vhost) {
   if (cmd.SSL) {
     config = server_ssl + config;
     const ss = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
-    config = replaceAll(replace(config, 'ssl_settings', replaceAll(ss, put)), put);
+    config = replaceAll(replace(config, 'ssl_settings', replaceAll(ss, overrides)), overrides);
   } else {
-    put['ssl_settings'] = '';
-    config = replaceAll(config, put);
+    overrides['ssl_settings'] = '';
+    config = replaceAll(config, overrides);
   }
 
   if (cmd.php !== false) {
