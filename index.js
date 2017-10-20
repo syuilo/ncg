@@ -41,38 +41,23 @@ if(cmd.nginx) {
   
   config = fs.readFileSync('confs/nginx.conf', 'utf-8');
   
-  config = replace(config, "user", cmd.user);
-  config = replace(config, "worker_processes", cmd.wp);
-  config = replace(config, "worker_connections", cmd.wc);
-  config = replace(config, "charset", cmd.charset);
-  config = replace(config, "error_log", cmd.el);
-  config = replace(config, "access_log", cmd.al);
-  config = replace(config, "keepalive_timeout", cmd.keeptime);
-  config = replace(config, "include", cmd.include);
+  let put = {
+    "user": cmd.user,
+    "worker_processes": cmd.wp,
+    "worker_connections": cmd.wc,
+    "charset": cmd.charset,
+    "error_log": cmd.el,
+    "access_log": cmd.al,
+    "user": cmd.user,
+    "keepalive_timeout": cmd.keeptime,
+    "include": cmd.include,
+    "sendfile": cmd.sendfile ? 'on' : 'off',
+    "tcp_nopush": cmd.tcp_nopush ? 'on' : 'off',
+    "tcp_nodelay": cmd.tcp_nodelay ? 'on' : 'off',
+    "gzip": cmd.gzip ? '' : '#',
+  };
   
-  if(cmd.sendfile) {
-    config = replace(config, "sendfile", 'on');
-  }else{
-    config = replace(config, "sendfile", 'off');
-  }
-  
-  if(cmd.tcp_nopush) {
-    config = replace(config, "tcp_nopush", 'on');
-  }else{
-    config = replace(config, "tcp_nopush", 'off');
-  }
-  
-  if(cmd.tcp_nodelay) {
-    config = replace(config, "tcp_nodelay", 'on');
-  }else{
-    config = replace(config, "tcp_nodelay", 'off');
-  }
-  
-  if(cmd.gzip) {
-    config = replace(config, "gzip", '');
-  }else{
-    config = replace(config, "gzip", '#');
-  }
+  config = rep(config, put);
   
   if(!isExistFile('built')) {
     fs.mkdirSync('built');
@@ -90,51 +75,37 @@ if(cmd.vhost) {
                      `  server_name ${cmd.servername};\n` +
                      "  return 301 https://$host$request_uri;\n" +
                      "}\n\n";
-    
-  config = replace(config, "server_name", cmd.servername);
-  config = replace(config, "rootdir", cmd.rootdir);
-  config = replace(config, "index", cmd.index);
-      
-  if(cmd.SSL) {
-    config = server_ssl + config;
-      const listen = "443";
-      config = replace(config, "listen", listen);
-  }else{
-    const listen = "80";
-    config = replace(config, "listen", listen);
-  }
   
-  if(cmd.certdir != false && cmd.certkeydir != false) {
-    let temp = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
-    temp = replace(temp, "certfile_pass", cmd.certdir);
-    temp = replace(temp, "certkey_pass", cmd.certkeydir);
-    
-    if(cmd.dhparam != false) {
-      temp = replace(temp, "dhparam_pass", `ssl_dhparam ${cmd.dhparam};`);
-    }else{
-      temp = replace(temp, "dhparam_pass", '');
-    }
-    
-    config = replace(config, "ssl_settings", temp);
+  let put = {
+    "server_name": cmd.servername,
+    "rootdir": cmd.rootdir,
+    "index": cmd.index,
+    "listen": cmd.SSL ? "443" : "80",
+    "certfile_pass": (cmd.certdir != false && cmd.certkeydir != false && !cmd.SSL) ? cmd.certdir : '',
+    "certkey_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',
+    "dhparam_pass": (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',
+  };
+  
+  if(cmd.SSL) {
+    const ss = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
+    config = rep(r(config, "ssl_settings", rep(ss, put)), put);
   }else{
-    console.log("certfile or certkey nothing. danger security risk.");
-    config = replace(config, "ssl_settings", '');
+    put["ssl_settings"] = '';
+    config = rep(config, put);
   }
   
   if(cmd.php !== false) {
     const temp = fs.readFileSync('confs/php_location.conf', 'utf-8');
-    location = replace(temp, "fastcgi_pass", cmd.php);
+    location = r(temp, "fastcgi_pass", cmd.php);
   }
   
   if(location != null) {
-    config = replace(config, "location", location);
+    config = r(config, "location", location);
   }else{
-    config = replace(config, "location", '');
+    config = r(config, "location", '');
   }
   
-  if(!isExistFile('built')) {
-    fs.mkdirSync('built');
-  }
+  if(!isExistFile('built')) fs.mkdirSync('built');
     
   if(cmd.vhconf_name) {
     fs.writeFileSync(`built/${cmd.vhconf_name}.conf`, config);
@@ -143,7 +114,17 @@ if(cmd.vhost) {
   }
 }
 
-function replace(temp, name, value) {
+function rep(str, obj) {
+  let result = str;
+  for(const v of str.match(/\{\{(.*)\}\}/g)) {
+    const test = v.match(/\{\{(.*)\}\}/)[1];
+    if(!obj[test]) continue;
+    result = r(result, test, obj[test]);
+  }
+  return result
+}
+
+function r(temp, name, value) {
   return temp.replace(new RegExp(`{{${name}}}`, 'g'), value);
 }
 
