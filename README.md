@@ -2,7 +2,7 @@
 > easy nginx conf and vhost conf generator.
 
 ## Install
-```
+``` shell
 git clone https://github.com/2vg/ncg
 cd ncg
 npm i
