@@ -70,11 +70,13 @@ if (cmd.vhost) {
   let config, location = null;
 
   config = fs.readFileSync('confs/temp.conf', 'utf-8');
-  const server_ssl = 'server {\n' +
-                     '  listen 80 http2;\n' +
-                     `  server_name ${cmd.servername};\n` +
-                     '  return 301 https://$host$request_uri;\n' +
-                     '}\n\n';
+
+  const server_ssl =
+    'server {\n' +
+    '  listen 80 http2;\n' +
+    `  server_name ${cmd.servername};\n` +
+    '  return 301 https://$host$request_uri;\n' +
+    '}\n\n';
 
   let put = {
     'server_name': cmd.servername,
