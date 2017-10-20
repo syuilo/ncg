@@ -135,9 +135,9 @@ function replace(template, name, value) {
 }
 
 /**
- * Check whether file exists
- * @param {*} file Name of file that you want to check
- * @returns {boolean} Whether file exists
+ * Check whether the file exists
+ * @param {*} file Name of the file that you want to check
+ * @returns {boolean} Whether the file exists
  */
 function isExistFile(file) {
   try {
