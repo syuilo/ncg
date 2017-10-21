@@ -86,35 +86,42 @@ if (cmd.vhost) {
     'certfile_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certdir : '',
     'certkey_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.SSL) ? cmd.certkeydir : '',
     'dhparam_pass': (cmd.certdir != false && cmd.certkeydir != false && cmd.dhparam != false && cmd.SSL) ? `ssl_dhparam ${cmd.dhparam};` : '',
+    'ssl_settings': ''
   };
 
   if (cmd.SSL) {
     config = server_ssl + config;
     const ss = fs.readFileSync('confs/ssl_settings.conf', 'utf-8');
-    config = replaceAll(replace(config, 'ssl_settings', replaceAll(ss, overrides)), overrides);
-  } else {
-    overrides['ssl_settings'] = '';
-    config = replaceAll(config, overrides);
+    overrides['ssl_settings'] = replaceAll(ss, overrides);
   }
+
+  config = replaceAll(config, overrides);
 
   if (cmd.php !== false) {
     const temp = fs.readFileSync('confs/php_location.conf', 'utf-8');
     location = replace(temp, 'fastcgi_pass', cmd.php);
   }
 
-  if (location != null) {
-    config = replace(config, 'location', location);
-  } else {
-    config = replace(config, 'location', '');
-  }
+  config = replace(config, 'location', location || '');
 
+  // Save the configuration
+  save(config);
+}
+
+/**
+ * Save a configuration as a file
+ * @param {*} config The configuration that you want to save
+ */
+function save(config) {
+  // Make the built directory if it not exists
   if (!isExistFile('built')) fs.mkdirSync('built');
 
-  if (cmd.vhconf_name) {
-    fs.writeFileSync(`built/${cmd.vhconf_name}.conf`, config);
-  } else {
-    fs.writeFileSync('built/default.conf', config);
-  }
+  const name = cmd.vhconf_name
+    ? `${cmd.vhconf_name}.conf`
+    : 'default.conf';
+
+  // Write
+  fs.writeFileSync(`built/${name}`, config);
 }
 
 function replaceAll(str, obj) {
