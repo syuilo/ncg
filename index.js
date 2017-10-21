@@ -59,11 +59,8 @@ if (cmd.nginx) {
 
   config = replaceAll(config, put);
 
-  if (!isExistFile('built')) {
-    fs.mkdirSync('built');
-  }
-
-  fs.writeFileSync('built/nginx.conf', config);
+  // Save the configuration
+  save(config, 'nginx.conf');
 }
 
 if (cmd.vhost) {
@@ -104,21 +101,22 @@ if (cmd.vhost) {
 
   config = replace(config, 'location', location || '');
 
+  const name = cmd.vhconf_name
+    ? `${cmd.vhconf_name}.conf`
+    : 'default.conf';
+
   // Save the configuration
-  save(config);
+  save(config, name);
 }
 
 /**
  * Save a configuration as a file
  * @param {*} config The configuration that you want to save
+ * @param {string} name The file name that you want to save
  */
-function save(config) {
+function save(config, name) {
   // Make the built directory if it not exists
   if (!isExistFile('built')) fs.mkdirSync('built');
-
-  const name = cmd.vhconf_name
-    ? `${cmd.vhconf_name}.conf`
-    : 'default.conf';
 
   // Write
   fs.writeFileSync(`built/${name}`, config);
